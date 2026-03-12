@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { persistAlertSignup } from "@/lib/alert-store";
+import {
+  isSupabaseAlertStoreConfigured,
+  persistAlertSignupToSupabase
+} from "@/lib/supabase-alert-store";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALERTS_WEBHOOK_URL = process.env.ALERTS_WEBHOOK_URL;
@@ -22,6 +27,27 @@ export async function POST(request: NextRequest) {
     submittedAt: new Date().toISOString()
   };
 
+  const persistenceResult = isSupabaseAlertStoreConfigured()
+    ? await persistAlertSignupToSupabase(payload)
+        .then(() => ({ ok: true as const, store: "supabase" as const }))
+        .catch((error: unknown) => ({
+          ok: false as const,
+          store: "supabase" as const,
+          error: error instanceof Error ? error.message : "Unknown storage error"
+        }))
+    : await persistAlertSignup(payload)
+        .then((storagePath) => ({ ok: true as const, store: "file" as const, storagePath }))
+        .catch((error: unknown) => ({
+          ok: false as const,
+          store: "file" as const,
+          error: error instanceof Error ? error.message : "Unknown storage error"
+        }));
+
+  let webhookResult:
+    | { attempted: false }
+    | { attempted: true; ok: true }
+    | { attempted: true; ok: false; error: string } = { attempted: false };
+
   if (ALERTS_WEBHOOK_URL) {
     const response = await fetch(ALERTS_WEBHOOK_URL, {
       method: "POST",
@@ -29,16 +55,42 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
-    });
+    }).catch((error: unknown) => ({
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : "Unknown webhook error"
+    }));
 
-    if (!response.ok) {
-      return NextResponse.json({ error: "Failed to save alert signup" }, { status: 502 });
+    if ("error" in response) {
+      webhookResult = { attempted: true, ok: false, error: response.error };
+    } else if (!response.ok) {
+      webhookResult = {
+        attempted: true,
+        ok: false,
+        error: `Webhook request failed with status ${response.status}`
+      };
+    } else {
+      webhookResult = { attempted: true, ok: true };
     }
-
-    return NextResponse.json({ ok: true, persisted: true });
   }
 
-  console.info("[SmarterStub][alerts] signup received", payload);
+  if (!persistenceResult.ok && (!webhookResult.attempted || !webhookResult.ok)) {
+    return NextResponse.json(
+      {
+        error: "Failed to save alert signup",
+        storageError: persistenceResult.error,
+        webhookError: webhookResult.attempted && !webhookResult.ok ? webhookResult.error : undefined
+      },
+      { status: 500 }
+    );
+  }
 
-  return NextResponse.json({ ok: true, persisted: false });
+  return NextResponse.json({
+    ok: true,
+    persisted: true,
+    storage: persistenceResult.store,
+    storagePath:
+      persistenceResult.ok && persistenceResult.store === "file" ? persistenceResult.storagePath : undefined,
+    webhookForwarded: webhookResult.attempted ? webhookResult.ok : false
+  });
 }

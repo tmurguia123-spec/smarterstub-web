@@ -133,6 +133,19 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
+      <section className="mb-6">
+        <EmailCaptureForm
+          title="Track deals for this event"
+          description="We'll alert you if better ticket deals appear."
+          buttonLabel="Track this event"
+          successMessage="You're on the list. We'll keep watch for better deals."
+          source="event-page"
+          eventId={event.id}
+          eventTitle={event.title}
+          compact
+        />
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[1.08fr,0.92fr] lg:gap-8">
         <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
           <div className={`relative bg-gradient-to-br ${event.imageAccent} p-8 text-white sm:p-10`}>
@@ -397,16 +410,6 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               </div>
           </div>
 
-          <EmailCaptureForm
-            title="Track this event"
-            description="Track this event and get notified when better deals appear or prices improve. No spam. Just smarter ticket updates."
-            buttonLabel="Notify me about better prices"
-            successMessage="You're on the list for better-price alerts."
-            source="event-page"
-            eventId={event.id}
-            eventTitle={event.title}
-            compact
-          />
         </aside>
       </div>
 
