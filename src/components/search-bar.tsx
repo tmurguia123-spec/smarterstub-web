@@ -11,6 +11,7 @@ interface SearchBarProps {
   defaultValue?: string;
   compact?: boolean;
   showExplore?: boolean;
+  enableOverlay?: boolean;
 }
 
 const STORAGE_KEY = "smarterstub-recent-searches";
@@ -125,7 +126,8 @@ function buildSearchUrl(value: string) {
 export function SearchBar({
   defaultValue = "",
   compact = false,
-  showExplore = true
+  showExplore = true,
+  enableOverlay = false
 }: SearchBarProps) {
   const instanceId = useId();
   const normalizedDefaultValue = normalizeSearchValue(defaultValue);
@@ -157,13 +159,16 @@ export function SearchBar({
     () => normalizeDisplayList(trendingSearches, compact ? 4 : 5),
     [compact]
   );
+  // The shared homepage search uses the same visual shell but no custom overlay. Keeping dropdowns opt-in
+  // avoids duplicate absolute panels during cross-route transitions and makes the homepage submit path deterministic.
   const shouldRenderOverlay =
+    enableOverlay &&
     focused &&
     !isNavigating &&
     (suggestions.length > 0 || visibleTrendingSearches.length > 0 || visibleRecentSearches.length > 0);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!enableOverlay || typeof window === "undefined") {
       return;
     }
 
@@ -181,22 +186,24 @@ export function SearchBar({
     return () => {
       window.removeEventListener(SEARCH_OVERLAY_EVENT, handleOverlayOpen as EventListener);
     };
-  }, [instanceId]);
+  }, [enableOverlay, instanceId]);
 
   function openOverlay() {
-    if (isNavigating) {
+    if (!enableOverlay || isNavigating) {
       return;
     }
 
     setFocused(true);
 
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent(SEARCH_OVERLAY_EVENT, {
-          detail: { instanceId }
-        })
-      );
+    if (typeof window === "undefined") {
+      return;
     }
+
+    window.dispatchEvent(
+      new CustomEvent(SEARCH_OVERLAY_EVENT, {
+        detail: { instanceId }
+      })
+    );
   }
 
   function closeOverlay() {
@@ -276,7 +283,7 @@ export function SearchBar({
         <input
           type="text"
           value={query}
-          onFocus={openOverlay}
+          onFocus={enableOverlay ? openOverlay : undefined}
           onBlur={closeOverlay}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search artist, team, venue, city, or event"

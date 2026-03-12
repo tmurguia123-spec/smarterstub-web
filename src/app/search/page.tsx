@@ -169,8 +169,8 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8">
-          {/* Remount the client search bar for any search-route change so overlay state cannot survive transitions. */}
-          <SearchBar key={searchBarRouteKey} defaultValue={query} compact />
+          {/* Keep dropdown behavior isolated to the dedicated search page and remount on any route change. */}
+          <SearchBar key={searchBarRouteKey} defaultValue={query} compact enableOverlay />
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr,1fr]">
