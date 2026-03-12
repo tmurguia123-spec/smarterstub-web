@@ -1,6 +1,6 @@
 import "server-only";
 
-import { mkdir, appendFile } from "node:fs/promises";
+import { mkdir, appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
 export interface AlertSignupRecord {
@@ -9,6 +9,11 @@ export interface AlertSignupRecord {
   eventId?: string;
   eventTitle?: string;
   submittedAt: string;
+}
+
+export interface TrackedEventRecord {
+  eventId: string;
+  eventTitle?: string;
 }
 
 const DEFAULT_ALERTS_STORAGE_PATH = path.join(process.cwd(), "data", "alert-signups.ndjson");
@@ -25,4 +30,30 @@ export async function persistAlertSignup(record: AlertSignupRecord) {
   await appendFile(storagePath, `${JSON.stringify(record)}\n`, "utf8");
 
   return storagePath;
+}
+
+export async function readTrackedEvents() {
+  const storagePath = getAlertsStoragePath();
+  const fileContents = await readFile(storagePath, "utf8").catch(() => "");
+
+  if (!fileContents) {
+    return [];
+  }
+
+  const trackedEvents = new Map<string, TrackedEventRecord>();
+
+  for (const line of fileContents.split("\n").filter(Boolean)) {
+    const record = JSON.parse(line) as AlertSignupRecord;
+
+    if (!record.eventId) {
+      continue;
+    }
+
+    trackedEvents.set(record.eventId, {
+      eventId: record.eventId,
+      eventTitle: record.eventTitle
+    });
+  }
+
+  return Array.from(trackedEvents.values());
 }
