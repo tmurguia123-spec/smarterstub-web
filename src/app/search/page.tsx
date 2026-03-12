@@ -344,17 +344,26 @@ export default async function SearchPage({
 
                   <div className="min-w-[220px] rounded-[24px] bg-slate-50 p-4">
                     <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      Smartest Ticket
+                      {smartestListing.inventoryPrecision === "event-level"
+                        ? "Best current Ticketmaster value"
+                        : "Smartest Ticket"}
                     </div>
                     <div className="mt-2 text-3xl font-semibold text-slate-950">
                       {formatCurrency(smartestListing.totalPrice)}
                     </div>
                     <div className="mt-2 text-sm text-slate-500">
-                      {smartestListing.provider} · Sec {smartestListing.section} · Row {smartestListing.row}
+                      {smartestListing.inventoryPrecision === "event-level"
+                        ? `${smartestListing.provider} · Estimated total`
+                        : `${smartestListing.provider} · Sec ${smartestListing.section} · Row ${smartestListing.row}`}
                     </div>
                     <div className="mt-3 text-sm font-medium text-teal-700">
                       Score {insight.confidenceScore} · Save {formatCurrency(comparison.savingsVsHighest)}
                     </div>
+                    {smartestListing.inventoryPrecision === "event-level" ? (
+                      <div className="mt-2 text-xs text-slate-500">
+                        Exact seats and availability are confirmed on Ticketmaster.
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 

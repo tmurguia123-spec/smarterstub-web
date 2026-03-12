@@ -33,6 +33,10 @@ function getEventSourceLabel(id: string) {
   return "Mixed";
 }
 
+function isEventLevelGuidance(listing: { inventoryPrecision?: "exact" | "event-level" }) {
+  return listing.inventoryPrecision === "event-level";
+}
+
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const event = await getUnifiedEventById(id);
@@ -57,6 +61,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   const maxFee = Math.max(...event.listings.map((listing) => listing.feeEstimate));
   const sourceLabel = getEventSourceLabel(event.id);
   const smartestProvider = getProvider(smartestListing.provider);
+  const smartestIsGuidance = isEventLevelGuidance(smartestListing);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -65,19 +70,25 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                Smartest Ticket to Buy
+                {smartestIsGuidance ? "Best current Ticketmaster value" : "Smartest Ticket to Buy"}
               </div>
               <div>
-                <div className="text-sm text-slate-500">Best overall ticket</div>
+                <div className="text-sm text-slate-500">
+                  {smartestIsGuidance ? "Current provider guidance" : "Best overall ticket"}
+                </div>
                 <div className="text-lg font-semibold text-slate-950">
-                  {smartestListing.provider} · Sec {smartestListing.section}, Row {smartestListing.row}
+                  {smartestIsGuidance
+                    ? smartestListing.provider
+                    : `${smartestListing.provider} · Sec ${smartestListing.section}, Row ${smartestListing.row}`}
                 </div>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-4 lg:min-w-[640px]">
               <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Total</div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                  {smartestIsGuidance ? "Estimated total" : "Total"}
+                </div>
                 <div className="mt-1 text-lg font-semibold text-slate-950">
                   {formatCurrency(smartestListing.totalPrice)}
                 </div>
@@ -106,10 +117,15 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               href={smartestListing.purchaseUrl}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:shadow-lg"
             >
-              Buy Smartest Ticket
+              {smartestIsGuidance ? "View live options on Ticketmaster" : "Buy Smartest Ticket"}
               <ArrowUpRight className="h-4 w-4" />
             </a>
           </div>
+          {smartestIsGuidance ? (
+            <p className="mt-3 text-xs text-slate-500">
+              Exact seats and availability are confirmed on Ticketmaster.
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -178,7 +194,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-teal-300">
-                    Smartest Ticket to Buy
+                    {smartestIsGuidance ? "Best current Ticketmaster value" : "Smartest Ticket to Buy"}
                   </div>
                   <div className="mt-3 text-3xl font-semibold">{smartestListing.provider}</div>
                   <div className="mt-2 text-5xl font-semibold">{formatCurrency(smartestListing.totalPrice)}</div>
@@ -206,9 +222,13 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                     </div>
                   </div>
                   <div className="rounded-[20px] bg-white/5 p-4">
-                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Seat preview</div>
+                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+                      {smartestIsGuidance ? "Availability" : "Seat preview"}
+                    </div>
                     <div className="mt-1 text-xl font-semibold">
-                      Sec {smartestListing.section}, Row {smartestListing.row}
+                      {smartestIsGuidance
+                        ? "Confirmed on Ticketmaster"
+                        : `Sec ${smartestListing.section}, Row ${smartestListing.row}`}
                     </div>
                   </div>
                 </div>
@@ -262,7 +282,8 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                         <div className="text-xs uppercase tracking-[0.16em] text-slate-400">{label}</div>
                         <div className="mt-2 font-semibold text-slate-950">{listing.provider}</div>
                         <div className="mt-1 text-sm text-slate-600">
-                          {formatCurrency(listing.totalPrice)} · Sec {listing.section}
+                          {formatCurrency(listing.totalPrice)}
+                          {isEventLevelGuidance(listing) ? " estimated total" : ` · Sec ${listing.section}`}
                         </div>
                       </div>
                     );
@@ -306,9 +327,17 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
             </div>
             <div className="mt-4 space-y-4">
               {[
-                ["Best Overall Buy", `${smartestListing.provider} · ${smartestInsight.confidenceScore}`],
+                [
+                  smartestIsGuidance ? "Best Current Ticketmaster Value" : "Best Overall Buy",
+                  `${smartestListing.provider} · ${smartestInsight.confidenceScore}`
+                ],
                 ["Best Budget Buy", `${budgetListing.provider} · ${formatCurrency(budgetListing.totalPrice)}`],
-                ["Best Premium Value", `${premiumListing.provider} · Sec ${premiumListing.section}`]
+                [
+                  "Best Premium Value",
+                  isEventLevelGuidance(premiumListing)
+                    ? `${premiumListing.provider} · Estimated total ${formatCurrency(premiumListing.totalPrice)}`
+                    : `${premiumListing.provider} · Sec ${premiumListing.section}`
+                ]
               ].map(([label, value]) => (
                 <div key={label} className="rounded-[24px] bg-slate-50 p-4">
                   <div className="text-sm text-slate-500">{label}</div>
@@ -426,9 +455,15 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                     </div>
                     <div className="mt-2 text-sm text-slate-600">{insight.summary}</div>
                     <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-500">
-                      <span>Sec {listing.section}</span>
-                      <span>Row {listing.row}</span>
-                      <span>Qty {listing.quantity}</span>
+                      {isEventLevelGuidance(listing) ? (
+                        <span>Exact seats and availability are confirmed on Ticketmaster.</span>
+                      ) : (
+                        <>
+                          <span>Sec {listing.section}</span>
+                          <span>Row {listing.row}</span>
+                          <span>Qty {listing.quantity}</span>
+                        </>
+                      )}
                     </div>
                     <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white">
                       <BadgeCheck className="h-3.5 w-3.5 text-teal-300" />
@@ -485,9 +520,14 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                         href={listing.purchaseUrl}
                         className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
                       >
-                        Go to site
+                        {isEventLevelGuidance(listing) ? "View live options on Ticketmaster" : "Go to site"}
                         <ArrowUpRight className="h-4 w-4" />
                       </a>
+                      {isEventLevelGuidance(listing) ? (
+                        <div className="text-xs text-slate-400">
+                          Exact seats and availability are confirmed on Ticketmaster.
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>

@@ -21,6 +21,7 @@ export function EventCard({ event }: { event: Event }) {
   const insight = getListingInsight(event, smartestListing);
   const provider = getProvider(smartestListing.provider);
   const priceDropPct = Math.round((comparison.savingsVsHighest / comparison.highestTotalPrice) * 100);
+  const smartestIsGuidance = smartestListing.inventoryPrecision === "event-level";
 
   return (
     <article className="group overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)]">
@@ -65,12 +66,16 @@ export function EventCard({ event }: { event: Event }) {
         <div className="rounded-[28px] bg-gradient-to-br from-slate-50 to-white p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Smartest ticket to buy</div>
+              <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+                {smartestIsGuidance ? "Best current Ticketmaster value" : "Smartest ticket to buy"}
+              </div>
               <div className="mt-1 text-2xl font-semibold text-slate-950">
                 {formatCurrency(smartestListing.totalPrice)}
               </div>
               <div className="mt-1 text-sm text-slate-500">
-                Sec {smartestListing.section} · Row {smartestListing.row} · {smartestListing.provider}
+                {smartestIsGuidance
+                  ? `${smartestListing.provider} · Estimated total`
+                  : `Sec ${smartestListing.section} · Row ${smartestListing.row} · ${smartestListing.provider}`}
               </div>
             </div>
             <div className="rounded-3xl bg-slate-950 px-4 py-3 text-white">
@@ -88,9 +93,17 @@ export function EventCard({ event }: { event: Event }) {
             <div className="mt-1 text-xs text-slate-500">Buy Confidence Score</div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Seat preview</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">Sec {smartestListing.section}</div>
-            <div className="mt-1 text-xs text-slate-500">Row {smartestListing.row} · Qty {smartestListing.quantity}</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+              {smartestIsGuidance ? "Availability" : "Seat preview"}
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-slate-950">
+              {smartestIsGuidance ? smartestListing.provider : `Sec ${smartestListing.section}`}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {smartestIsGuidance
+                ? "Exact seats and availability are confirmed on Ticketmaster."
+                : `Row ${smartestListing.row} · Qty ${smartestListing.quantity}`}
+            </div>
           </div>
           <div>
             <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Compared</div>

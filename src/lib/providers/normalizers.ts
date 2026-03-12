@@ -93,6 +93,7 @@ function buildSyntheticListings(params: {
       section: sectionPool[index % sectionPool.length],
       row: rowPool[index % rowPool.length],
       quantity: index === 0 ? 2 : index === 1 ? 4 : 2,
+      inventoryPrecision: "event-level",
       dealScore: 80,
       badges: badgeSet,
       notes: `${params.provider} normalized listing generated from available marketplace pricing data.`,

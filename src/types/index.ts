@@ -59,6 +59,7 @@ export interface Listing {
   section: string;
   row: string;
   quantity: number;
+  inventoryPrecision?: "exact" | "event-level";
   dealScore: number;
   badges: DealBadge[];
   notes: string;
