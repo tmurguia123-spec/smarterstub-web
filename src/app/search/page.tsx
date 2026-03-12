@@ -171,14 +171,22 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8 grid gap-4">
-          <section className="rounded-[28px] bg-slate-50 p-4 sm:p-5">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+              </div>
+              <a
+                href={makeSearchHref(query, "smartest-deal", "All", "All Cities", "All Providers")}
+                className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600"
+              >
+                Reset
+              </a>
             </div>
-            <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-2 text-sm text-slate-600">
-                <span className="font-medium text-slate-700">Sort</span>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+              <div className="grid content-start gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <span className="text-sm font-medium text-slate-700">Sort</span>
                 <div className="flex flex-wrap gap-2">
                   {sortOptions.map((item) => {
                     const isActive = sort === item.value;
@@ -187,7 +195,7 @@ export default async function SearchPage({
                       <a
                         key={item.value}
                         href={makeSearchHref(query, item.value, type, city, provider)}
-                        className={`rounded-full border px-3 py-2 text-sm ${
+                        className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-sm ${
                           isActive
                             ? "border-slate-950 bg-slate-950 text-white"
                             : "border-slate-200 bg-white text-slate-600"
@@ -199,14 +207,14 @@ export default async function SearchPage({
                   })}
                 </div>
               </div>
-              <div className="grid gap-2 text-sm text-slate-600">
-                <span className="font-medium text-slate-700">Category</span>
+              <div className="grid content-start gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <span className="text-sm font-medium text-slate-700">Category</span>
                 <div className="flex flex-wrap gap-2">
                   {categories.map((item) => (
                     <a
                       key={item}
                       href={makeSearchHref(query, sort, item, city, provider)}
-                      className={`rounded-full border px-3 py-2 text-sm ${
+                      className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-sm ${
                         type === item
                           ? "border-slate-950 bg-slate-950 text-white"
                           : "border-slate-200 bg-white text-slate-600"
@@ -217,14 +225,14 @@ export default async function SearchPage({
                   ))}
                 </div>
               </div>
-              <div className="grid gap-2 text-sm text-slate-600">
-                <span className="font-medium text-slate-700">City</span>
+              <div className="grid content-start gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <span className="text-sm font-medium text-slate-700">City</span>
                 <div className="flex flex-wrap gap-2">
                   {cities.map((item) => (
                     <a
                       key={item}
                       href={makeSearchHref(query, sort, type, item, provider)}
-                      className={`rounded-full border px-3 py-2 text-sm ${
+                      className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-sm ${
                         city === item
                           ? "border-slate-950 bg-slate-950 text-white"
                           : "border-slate-200 bg-white text-slate-600"
@@ -235,14 +243,14 @@ export default async function SearchPage({
                   ))}
                 </div>
               </div>
-              <div className="grid gap-2 text-sm text-slate-600">
-                <span className="font-medium text-slate-700">Provider</span>
+              <div className="grid content-start gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <span className="text-sm font-medium text-slate-700">Provider</span>
                 <div className="flex flex-wrap gap-2">
                   {providers.map((item) => (
                     <a
                       key={item}
                       href={makeSearchHref(query, sort, type, city, item)}
-                      className={`rounded-full border px-3 py-2 text-sm ${
+                      className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-sm ${
                         provider === item
                           ? "border-slate-950 bg-slate-950 text-white"
                           : "border-slate-200 bg-white text-slate-600"
@@ -254,14 +262,6 @@ export default async function SearchPage({
                 </div>
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <a
-                href={makeSearchHref(query, "smartest-deal", "All", "All Cities", "All Providers")}
-                className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600"
-              >
-                Reset
-              </a>
-            </div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
               {[
                 `Sort: ${sort}`,
@@ -269,7 +269,7 @@ export default async function SearchPage({
                 `City: ${city}`,
                 `Provider: ${provider}`
               ].map((item) => (
-                <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5">
+                <span key={item} className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
                   {item}
                 </span>
               ))}
