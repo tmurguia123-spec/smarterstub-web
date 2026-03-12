@@ -23,6 +23,15 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 const categories = ["All", "Concert", "Sports", "Comedy", "Theater"];
 const cities = ["All Cities", "Kansas City", "New York", "Los Angeles", "Chicago", "Seattle", "Austin"];
 const providers = ["All Providers", "Ticketmaster", "SeatGeek", "Gametime", "StubHub", "Vivid Seats", "TickPick"];
+const SEARCH_QUERY_MAX_LENGTH = 60;
+
+function sanitizeSearchQuery(value: string | undefined) {
+  return (value ?? "").replace(/\s+/g, " ").trim().slice(0, SEARCH_QUERY_MAX_LENGTH);
+}
+
+function pickAllowedValue<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T) {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
 
 function getEventSmartScore(event: Event) {
   const ranking = getEventRanking(event);
@@ -91,11 +100,28 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const query = typeof params.q === "string" ? params.q : "";
-  const sort = typeof params.sort === "string" ? params.sort : "smartest-deal";
-  const type = typeof params.type === "string" ? params.type : "All";
-  const city = typeof params.city === "string" ? params.city : "All Cities";
-  const provider = typeof params.provider === "string" ? params.provider : "All Providers";
+  const query = sanitizeSearchQuery(typeof params.q === "string" ? params.q : "");
+  const sort = pickAllowedValue(
+    typeof params.sort === "string" ? params.sort : undefined,
+    ["smartest-deal", "buy-confidence", "lowest-total", "best-seat-value"] as const,
+    "smartest-deal"
+  );
+  const type = pickAllowedValue(
+    typeof params.type === "string" ? params.type : undefined,
+    categories,
+    "All"
+  );
+  const city = pickAllowedValue(
+    typeof params.city === "string" ? params.city : undefined,
+    cities,
+    "All Cities"
+  );
+  const provider = pickAllowedValue(
+    typeof params.provider === "string" ? params.provider : undefined,
+    providers,
+    "All Providers"
+  );
+  const searchBarRouteKey = [query, sort, type, city, provider].join("|");
 
   const searchResult = await searchUnifiedEvents(query);
   const results = sortEvents(
@@ -143,7 +169,8 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8">
-          <SearchBar defaultValue={query} compact />
+          {/* Remount the client search bar for any search-route change so overlay state cannot survive transitions. */}
+          <SearchBar key={searchBarRouteKey} defaultValue={query} compact />
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr,1fr]">
