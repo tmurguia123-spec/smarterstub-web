@@ -169,8 +169,8 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8">
-          {/* Keep dropdown behavior isolated to the dedicated search page and remount on any route change. */}
-          <SearchBar key={searchBarRouteKey} defaultValue={query} compact enableOverlay />
+          {/* Remount the submit-only search bar on route changes so the input stays in sync with sanitized params. */}
+          <SearchBar key={searchBarRouteKey} defaultValue={query} compact />
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr,1fr]">
