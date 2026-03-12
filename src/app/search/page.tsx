@@ -121,8 +121,6 @@ export default async function SearchPage({
     providers,
     "All Providers"
   );
-  const searchBarRouteKey = [query, sort, type, city, provider].join("|");
-
   const searchResult = await searchUnifiedEvents(query);
   const results = sortEvents(
     sort,
@@ -169,8 +167,8 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8">
-          {/* Remount the submit-only search bar on route changes so the input stays in sync with sanitized params. */}
-          <SearchBar key={searchBarRouteKey} defaultValue={query} compact />
+          {/* Search route changes now use plain navigations, so the bar can stay simple and deterministic. */}
+          <SearchBar defaultValue={query} compact />
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr,1fr]">
@@ -246,13 +244,13 @@ export default async function SearchPage({
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {trendingSearches.slice(0, 4).map((item) => (
-              <Link
+              <a
                 key={item}
                 href={`/search?q=${encodeURIComponent(item)}`}
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
               >
                 {item}
-              </Link>
+              </a>
             ))}
           </div>
         </div>
@@ -302,13 +300,13 @@ export default async function SearchPage({
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {trendingSearches.map((item) => (
-                  <Link
+                  <a
                     key={item}
                     href={`/search?q=${encodeURIComponent(item)}`}
                     className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
                   >
                     {item}
-                  </Link>
+                  </a>
                 ))}
               </div>
             </div>

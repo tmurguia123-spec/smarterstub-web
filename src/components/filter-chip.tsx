@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function FilterChip({
@@ -12,7 +11,7 @@ export function FilterChip({
   children: ReactNode;
 }) {
   return (
-    <Link
+    <a
       href={href}
       className={cn(
         "rounded-full border px-4 py-2 text-sm font-medium transition",
@@ -22,6 +21,6 @@ export function FilterChip({
       )}
     >
       {children}
-    </Link>
+    </a>
   );
 }

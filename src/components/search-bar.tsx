@@ -2,7 +2,6 @@
 
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { trendingSearches } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -118,8 +117,7 @@ export function SearchBar({
   showExplore = true
 }: SearchBarProps) {
   const [query, setQuery] = useState(normalizeSearchValue(defaultValue));
-  const [isNavigating, setIsNavigating] = useState(false);
-  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function persistRecentSearch(value: string) {
     if (!value || typeof window === "undefined") {
@@ -133,16 +131,14 @@ export function SearchBar({
   function navigateToSearch(value: string) {
     const normalizedValue = normalizeSearchValue(value);
     const nextUrl = buildSearchUrl(normalizedValue);
-    const currentUrl =
-      typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "";
-
-    if (isNavigating || nextUrl === currentUrl) {
+    if (typeof window === "undefined" || isSubmitting) {
       return;
     }
 
-    // Final production choice: submit-only search bars with no custom overlay or focus lifecycle.
-    setIsNavigating(true);
-    router.push(nextUrl);
+    // Final production choice: bypass App Router client transitions for search so previous page trees,
+    // loading states, and new results never coexist in the browser during navigation.
+    setIsSubmitting(true);
+    window.location.assign(nextUrl);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -184,7 +180,7 @@ export function SearchBar({
         />
         <button
           type="submit"
-          disabled={isNavigating}
+          disabled={isSubmitting}
           className="rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-80"
         >
           Compare deals
