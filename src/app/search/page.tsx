@@ -7,13 +7,18 @@ import {
   Ticket
 } from "lucide-react";
 import { DevSourceIndicator } from "@/components/dev-source-indicator";
-import { SearchPageDebug } from "@/components/search-page-debug";
 import { SearchBar } from "@/components/search-bar";
 import { getEventComparison, getEventRanking, getListingInsight, trendingSearches } from "@/lib/mock-data";
 import { Event, Listing } from "@/types";
 import { searchUnifiedEvents } from "@/lib/ticket-service";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+const sortOptions = [
+  { value: "smartest-deal", label: "Smartest Deal" },
+  { value: "buy-confidence", label: "Buy Confidence" },
+  { value: "lowest-total", label: "Lowest Total" },
+  { value: "best-seat-value", label: "Best Seat Value" }
+] as const;
 const categories = ["All", "Concert", "Sports", "Comedy", "Theater"];
 const cities = ["All Cities", "Kansas City", "New York", "Los Angeles", "Chicago", "Seattle", "Austin"];
 const providers = ["All Providers", "Ticketmaster", "SeatGeek", "Gametime", "StubHub", "Vivid Seats", "TickPick"];
@@ -135,9 +140,7 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <SearchPageDebug query={query} resultCount={resultCount} />
-
-      <div className="rounded-[34px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <div className="text-sm font-semibold uppercase tracking-[0.22em] text-teal-700">
@@ -156,8 +159,8 @@ export default async function SearchPage({
             ) : null}
             <DevSourceIndicator label={sourceLabel} />
           </div>
-          <div className="rounded-[26px] bg-gradient-to-br from-slate-950 via-slate-900 to-teal-900 px-5 py-4 text-sm text-slate-200 shadow-lg">
-            <div className="font-semibold text-white">{resultCount} events ranked</div>
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
+            <div className="font-semibold text-slate-950">{resultCount} events ranked</div>
             <div className="mt-1">Best Overall Buy and score-based recommendations surface first.</div>
           </div>
         </div>
@@ -168,79 +171,97 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8 grid gap-4">
-          <form method="GET" action="/search" className="rounded-[28px] bg-slate-50 p-5">
+          <section className="rounded-[28px] bg-slate-50 p-5">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
-              Sort + Filter
+              Safe Filter Mode
             </div>
-            <input type="hidden" name="q" value={query} />
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Filters now use direct links instead of native dropdowns to avoid the remaining
+              production crash tied to dropdown interaction on this page.
+            </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label className="grid gap-2 text-sm text-slate-600">
+              <div className="grid gap-2 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Sort</span>
-                <select
-                  name="sort"
-                  defaultValue={sort}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
-                >
-                  <option value="smartest-deal">Smartest Deal</option>
-                  <option value="buy-confidence">Buy Confidence</option>
-                  <option value="lowest-total">Lowest Total</option>
-                  <option value="best-seat-value">Best Seat Value</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm text-slate-600">
+                <div className="flex flex-wrap gap-2">
+                  {sortOptions.map((item) => {
+                    const isActive = sort === item.value;
+
+                    return (
+                      <a
+                        key={item.value}
+                        href={makeSearchHref(query, item.value, type, city, provider)}
+                        className={`rounded-full border px-3 py-2 text-sm ${
+                          isActive
+                            ? "border-slate-950 bg-slate-950 text-white"
+                            : "border-slate-200 bg-white text-slate-600"
+                        }`}
+                      >
+                        {item.label}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Category</span>
-                <select
-                  name="type"
-                  defaultValue={type}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
-                >
+                <div className="flex flex-wrap gap-2">
                   {categories.map((item) => (
-                    <option key={item} value={item}>
+                    <a
+                      key={item}
+                      href={makeSearchHref(query, sort, item, city, provider)}
+                      className={`rounded-full border px-3 py-2 text-sm ${
+                        type === item
+                          ? "border-slate-950 bg-slate-950 text-white"
+                          : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                    >
                       {item}
-                    </option>
+                    </a>
                   ))}
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm text-slate-600">
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">City</span>
-                <select
-                  name="city"
-                  defaultValue={city}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
-                >
+                <div className="flex flex-wrap gap-2">
                   {cities.map((item) => (
-                    <option key={item} value={item}>
+                    <a
+                      key={item}
+                      href={makeSearchHref(query, sort, type, item, provider)}
+                      className={`rounded-full border px-3 py-2 text-sm ${
+                        city === item
+                          ? "border-slate-950 bg-slate-950 text-white"
+                          : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                    >
                       {item}
-                    </option>
+                    </a>
                   ))}
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm text-slate-600">
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Provider</span>
-                <select
-                  name="provider"
-                  defaultValue={provider}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
-                >
+                <div className="flex flex-wrap gap-2">
                   {providers.map((item) => (
-                    <option key={item} value={item}>
+                    <a
+                      key={item}
+                      href={makeSearchHref(query, sort, type, city, item)}
+                      className={`rounded-full border px-3 py-2 text-sm ${
+                        provider === item
+                          ? "border-slate-950 bg-slate-950 text-white"
+                          : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                    >
                       {item}
-                    </option>
+                    </a>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                className="rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:shadow-lg"
-              >
-                Apply filters
-              </button>
               <a
                 href={makeSearchHref(query, "smartest-deal", "All", "All Cities", "All Providers")}
-                className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+                className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600"
               >
                 Reset
               </a>
@@ -257,12 +278,12 @@ export default async function SearchPage({
                 </span>
               ))}
             </div>
-          </form>
+          </section>
         </div>
       </div>
 
       {resultCount === 0 ? (
-        <div className="mt-10 rounded-[34px] border border-dashed border-slate-300 bg-white p-10 text-center shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <div className="mt-10 rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-teal-100">
             <SearchCheck className="h-8 w-8 text-slate-600" />
           </div>
@@ -276,7 +297,7 @@ export default async function SearchPage({
               <a
                 key={item}
                 href={`/search?q=${encodeURIComponent(item)}`}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
               >
                 {item}
               </a>
@@ -293,7 +314,7 @@ export default async function SearchPage({
             return (
               <article
                 key={event.id}
-                className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+                className="rounded-[24px] border border-slate-200 bg-white p-6"
               >
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-3">
@@ -344,7 +365,7 @@ export default async function SearchPage({
                   </div>
                   <Link
                     href={`/event/${event.id}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:shadow-lg"
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
                   >
                     View event details
                   </Link>

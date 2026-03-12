@@ -3,10 +3,10 @@ import { Search, Ticket } from "lucide-react";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
+    <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-teal-900/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
             <Ticket className="h-5 w-5" />
           </div>
           <div>

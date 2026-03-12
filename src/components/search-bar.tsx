@@ -163,7 +163,7 @@ export function SearchBar({
     <div className={cn("w-full min-w-0", compact ? "max-w-4xl" : "max-w-5xl")}>
       <form
         onSubmit={handleSubmit}
-        className="relative flex w-full min-w-0 items-center gap-3 rounded-[30px] border border-slate-200/80 bg-white/95 p-2 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur-xl transition focus-within:border-teal-300 focus-within:shadow-[0_30px_90px_rgba(15,118,110,0.18)]"
+        className="flex w-full min-w-0 items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3"
       >
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-100 text-teal-700">
           <Search className="h-5 w-5" />
@@ -181,7 +181,7 @@ export function SearchBar({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-80"
+          className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-80"
         >
           Compare deals
         </button>
@@ -195,7 +195,7 @@ export function SearchBar({
               key={item}
               type="button"
               onClick={() => handleTrendingClick(item)}
-              className="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1.5 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
             >
               {item}
             </button>
