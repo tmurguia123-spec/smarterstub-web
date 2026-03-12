@@ -15,21 +15,110 @@ interface SearchBarProps {
 
 const STORAGE_KEY = "smarterstub-recent-searches";
 const MAX_RECENT_SEARCHES = 4;
-const MAX_STORED_SEARCH_LENGTH = 80;
-const MAX_STORAGE_BYTES = 2048;
+const MAX_STORED_SEARCH_LENGTH = 60;
+const MAX_STORAGE_BYTES = 512;
+const MAX_SUGGESTIONS = 6;
+const MAX_TRENDING_ITEMS = 4;
+const MAX_RECENT_PANEL_ITEMS = 3;
 
-function normalizeRecentSearches(value: unknown) {
+function normalizeSearchValue(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, MAX_STORED_SEARCH_LENGTH);
+}
+
+function normalizeDisplayList(value: unknown, limit: number) {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const deduped = value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0 && item.length <= MAX_STORED_SEARCH_LENGTH)
-    .filter((item, index, array) => array.indexOf(item) === index);
+  const normalizedItems: string[] = [];
+  const seen = new Set<string>();
 
-  return deduped.slice(0, MAX_RECENT_SEARCHES);
+  for (const item of value) {
+    if (typeof item !== "string") {
+      continue;
+    }
+
+    const normalizedItem = normalizeSearchValue(item);
+    const dedupeKey = normalizedItem.toLowerCase();
+
+    if (!normalizedItem || seen.has(dedupeKey)) {
+      continue;
+    }
+
+    seen.add(dedupeKey);
+    normalizedItems.push(normalizedItem);
+
+    if (normalizedItems.length >= limit) {
+      break;
+    }
+  }
+
+  return normalizedItems;
+}
+
+function normalizeRecentSearches(value: unknown) {
+  return normalizeDisplayList(value, MAX_RECENT_SEARCHES);
+}
+
+function readRecentSearchesFromStorage() {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      return [];
+    }
+
+    // Reject oversized payloads before parsing so corrupted storage cannot balloon parse cost or rendered output.
+    if (saved.length > MAX_STORAGE_BYTES) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+
+    const normalized = normalizeRecentSearches(JSON.parse(saved));
+    const serialized = JSON.stringify(normalized);
+
+    // Rewrite malformed, duplicated, or overgrown payloads back to the only safe persisted shape.
+    if (serialized !== saved) {
+      window.localStorage.setItem(STORAGE_KEY, serialized);
+    }
+
+    return normalized;
+  } catch {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore storage reset failures; the component state still falls back to a safe empty list.
+    }
+
+    return [];
+  }
+}
+
+function writeRecentSearchesToStorage(values: string[]) {
+  const normalized = normalizeRecentSearches(values);
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  } catch {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore storage reset failures; the in-memory recent-search list is already bounded.
+    }
+  }
+
+  return normalized;
+}
+
+function buildSearchUrl(value: string) {
+  const normalizedValue = normalizeSearchValue(value);
+  const params = new URLSearchParams();
+
+  if (normalizedValue) {
+    params.set("q", normalizedValue);
+  }
+
+  const stringified = params.toString();
+  return `/search${stringified ? `?${stringified}` : ""}`;
 }
 
 export function SearchBar({
@@ -37,52 +126,55 @@ export function SearchBar({
   compact = false,
   showExplore = true
 }: SearchBarProps) {
-  const [query, setQuery] = useState(defaultValue);
+  const normalizedDefaultValue = normalizeSearchValue(defaultValue);
+  const [query, setQuery] = useState(normalizedDefaultValue);
   const [mounted, setMounted] = useState(false);
   const [focused, setFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const router = useRouter();
   const pathname = usePathname();
   const blurTimeoutRef = useRef<number | null>(null);
-  const suggestions = useMemo(() => getAutocompleteSuggestions(query), [query]);
+  const lastNavigationRef = useRef<string | null>(null);
+  const suggestions = useMemo(
+    () => normalizeDisplayList(getAutocompleteSuggestions(query), MAX_SUGGESTIONS),
+    [query]
+  );
+  const visibleTrendingSearches = useMemo(
+    () => normalizeDisplayList(trendingSearches, MAX_TRENDING_ITEMS),
+    []
+  );
+  const visibleRecentSearches = useMemo(
+    () =>
+      normalizeDisplayList(
+        recentSearches.length ? recentSearches : visibleTrendingSearches.slice(0, MAX_RECENT_PANEL_ITEMS),
+        MAX_RECENT_PANEL_ITEMS
+      ),
+    [recentSearches, visibleTrendingSearches]
+  );
+  const visibleExploreSearches = useMemo(
+    () => normalizeDisplayList(trendingSearches, compact ? 4 : 5),
+    [compact]
+  );
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+      if (lastNavigationRef.current === currentUrl) {
+        lastNavigationRef.current = null;
+      }
+    } else if (lastNavigationRef.current === pathname) {
+      lastNavigationRef.current = null;
+    }
+  }, [pathname]);
 
   useEffect(() => {
     setMounted(true);
-
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
-        return;
-      }
-
-      // Refuse oversized payloads before parsing so corrupted browser state stays cheap to recover from.
-      if (saved.length > MAX_STORAGE_BYTES) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setRecentSearches([]);
-        return;
-      }
-
-      const normalized = normalizeRecentSearches(JSON.parse(saved));
-
-      // If the stored payload was malformed or noisy, reset it to the clean bounded version.
-      if (JSON.stringify(normalized) !== saved) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-      }
-
-      setRecentSearches(normalized);
-    } catch {
-      try {
-        window.localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        // Ignore storage reset failures; state is already falling back safely.
-      }
-      setRecentSearches([]);
-    }
+    setRecentSearches(readRecentSearchesFromStorage());
   }, []);
 
   useEffect(() => {
-    setQuery(defaultValue);
-  }, [defaultValue]);
+    setQuery(normalizedDefaultValue);
+  }, [normalizedDefaultValue]);
 
   useEffect(() => {
     return () => {
@@ -93,51 +185,50 @@ export function SearchBar({
   }, []);
 
   function persistRecentSearches(values: string[]) {
-    // Always normalize before writing so localStorage can only hold a tiny, safe, deduped payload.
-    const nextRecent = normalizeRecentSearches(values);
+    // Keep the persisted payload canonical before state or storage ever sees it.
+    const nextRecent = writeRecentSearchesToStorage(values);
     setRecentSearches(nextRecent);
-
-    if (mounted) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRecent));
-    }
 
     return nextRecent;
   }
 
   function navigateToSearch(value: string) {
-    const searchParams = new URLSearchParams();
-    if (value) {
-      searchParams.set("q", value);
-    }
-    const nextUrl = `/search${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    const nextUrl = buildSearchUrl(value);
     const currentUrl =
-      pathname === "/search"
-        ? `/search${defaultValue.trim() ? `?q=${encodeURIComponent(defaultValue.trim())}` : ""}`
-        : pathname;
+      typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : pathname;
 
-    if (nextUrl !== currentUrl) {
-      router.push(nextUrl);
+    // Skip same-route pushes and repeated transitions targeting the same URL.
+    if (nextUrl === currentUrl || lastNavigationRef.current === nextUrl) {
+      return;
     }
+
+    lastNavigationRef.current = nextUrl;
+    router.push(nextUrl);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = query.trim();
-    const safeStoredQuery = trimmed.slice(0, MAX_STORED_SEARCH_LENGTH);
+    const normalizedQuery = normalizeSearchValue(query);
 
-    if (trimmed) {
-      persistRecentSearches([safeStoredQuery, ...recentSearches]);
+    if (normalizedQuery) {
+      persistRecentSearches([normalizedQuery, ...recentSearches]);
     }
 
     setFocused(false);
-    navigateToSearch(trimmed);
+    navigateToSearch(normalizedQuery);
   }
 
   function selectSuggestion(value: string) {
-    setQuery(value);
-    persistRecentSearches([value.slice(0, MAX_STORED_SEARCH_LENGTH), ...recentSearches]);
+    const normalizedValue = normalizeSearchValue(value);
+
+    setQuery(normalizedValue);
+
+    if (normalizedValue) {
+      persistRecentSearches([normalizedValue, ...recentSearches]);
+    }
+
     setFocused(false);
-    navigateToSearch(value);
+    navigateToSearch(normalizedValue);
   }
 
   return (
@@ -202,7 +293,7 @@ export function SearchBar({
                     Trending
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {trendingSearches.slice(0, 4).map((item) => (
+                    {visibleTrendingSearches.map((item) => (
                       <button
                         key={item}
                         type="button"
@@ -220,10 +311,7 @@ export function SearchBar({
                     Recent
                   </div>
                   <div className="mt-3 space-y-2">
-                    {(mounted && recentSearches.length
-                      ? recentSearches
-                      : trendingSearches.slice(0, 3)
-                    ).map((item) => (
+                    {(mounted ? visibleRecentSearches : visibleTrendingSearches.slice(0, MAX_RECENT_PANEL_ITEMS)).map((item) => (
                       <button
                         key={item}
                         type="button"
@@ -244,7 +332,7 @@ export function SearchBar({
       {showExplore ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <span className="font-medium text-slate-600">Trending:</span>
-          {trendingSearches.slice(0, compact ? 4 : 5).map((item) => (
+          {visibleExploreSearches.map((item) => (
             <button
               key={item}
               type="button"
