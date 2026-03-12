@@ -64,19 +64,19 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   const smartestIsGuidance = isEventLevelGuidance(smartestListing);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="sticky top-[72px] z-30 mb-6">
-        <div className="rounded-[26px] border border-slate-200/80 bg-white/92 px-4 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:px-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <div className="mb-4 lg:sticky lg:top-[72px] lg:z-30 lg:mb-6">
+        <div className="rounded-[20px] border border-slate-200 bg-white px-3 py-3 sm:rounded-[24px] sm:px-4 sm:py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700 sm:px-3 sm:text-xs sm:tracking-[0.14em]">
                 {smartestIsGuidance ? "Best current Ticketmaster value" : "Smartest Ticket to Buy"}
               </div>
               <div>
-                <div className="text-sm text-slate-500">
+                <div className="text-xs text-slate-500 sm:text-sm">
                   {smartestIsGuidance ? "Current provider guidance" : "Best overall ticket"}
                 </div>
-                <div className="text-lg font-semibold text-slate-950">
+                <div className="text-base font-semibold text-slate-950 sm:text-lg">
                   {smartestIsGuidance
                     ? smartestListing.provider
                     : `${smartestListing.provider} · Sec ${smartestListing.section}, Row ${smartestListing.row}`}
@@ -84,30 +84,30 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-4 lg:min-w-[640px]">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[640px] lg:gap-3">
+              <div className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400">
                   {smartestIsGuidance ? "Estimated total" : "Total"}
                 </div>
-                <div className="mt-1 text-lg font-semibold text-slate-950">
+                <div className="mt-1 text-base font-semibold text-slate-950 sm:text-lg">
                   {formatCurrency(smartestListing.totalPrice)}
                 </div>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Confidence</div>
-                <div className="mt-1 text-lg font-semibold text-slate-950">
+              <div className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Confidence</div>
+                <div className="mt-1 text-base font-semibold text-slate-950 sm:text-lg">
                   {smartestInsight.confidenceScore}
                 </div>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Recommendation</div>
-                <div className="mt-1 text-sm font-semibold text-teal-700">
+              <div className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Recommendation</div>
+                <div className="mt-1 text-xs font-semibold text-teal-700 sm:text-sm">
                   {smartestInsight.recommendation}
                 </div>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Provider</div>
-                <div className="mt-1 text-sm font-semibold text-slate-950">
+              <div className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Provider</div>
+                <div className="mt-1 text-xs font-semibold text-slate-950 sm:text-sm">
                   {smartestProvider?.name ?? smartestListing.provider}
                 </div>
               </div>
@@ -115,21 +115,21 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
 
             <a
               href={smartestListing.purchaseUrl}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:shadow-lg"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white sm:w-auto sm:px-5 sm:py-3"
             >
               {smartestIsGuidance ? "View live options on Ticketmaster" : "Buy Smartest Ticket"}
               <ArrowUpRight className="h-4 w-4" />
             </a>
           </div>
           {smartestIsGuidance ? (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-2 text-[11px] leading-5 text-slate-500 sm:mt-3 sm:text-xs">
               Exact seats and availability are confirmed on Ticketmaster.
             </p>
           ) : null}
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1.08fr,0.92fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.08fr,0.92fr] lg:gap-8">
         <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
           <div className={`relative bg-gradient-to-br ${event.imageAccent} p-8 text-white sm:p-10`}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_28%),linear-gradient(180deg,transparent,rgba(15,23,42,0.28))]" />
