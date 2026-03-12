@@ -7,7 +7,6 @@ import {
   Ticket
 } from "lucide-react";
 import { DevSourceIndicator } from "@/components/dev-source-indicator";
-import { FilterChip } from "@/components/filter-chip";
 import { SearchPageDebug } from "@/components/search-page-debug";
 import { SearchBar } from "@/components/search-bar";
 import { getEventComparison, getEventRanking, getListingInsight, trendingSearches } from "@/lib/mock-data";
@@ -169,53 +168,96 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8 grid gap-4">
-          <div className="rounded-[28px] bg-slate-50 p-5">
+          <form method="GET" action="/search" className="rounded-[28px] bg-slate-50 p-5">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
               Sort + Filter
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <FilterChip href={makeSearchHref(query, "smartest-deal", type, city, provider)} active={sort === "smartest-deal"}>
-                Smartest Deal
-              </FilterChip>
-              <FilterChip href={makeSearchHref(query, "buy-confidence", type, city, provider)} active={sort === "buy-confidence"}>
-                Buy Confidence
-              </FilterChip>
-              <FilterChip href={makeSearchHref(query, "lowest-total", type, city, provider)} active={sort === "lowest-total"}>
-                Lowest Total
-              </FilterChip>
-              <FilterChip href={makeSearchHref(query, "best-seat-value", type, city, provider)} active={sort === "best-seat-value"}>
-                Best Seat Value
-              </FilterChip>
-              {categories.map((item) => (
-                <FilterChip
-                  key={item}
-                  href={makeSearchHref(query, sort, item, city, provider)}
-                  active={type === item}
+            <input type="hidden" name="q" value={query} />
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <label className="grid gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">Sort</span>
+                <select
+                  name="sort"
+                  defaultValue={sort}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
                 >
-                  {item}
-                </FilterChip>
-              ))}
-              {cities.slice(0, 4).map((item) => (
-                <FilterChip
-                  key={item}
-                  href={makeSearchHref(query, sort, type, item, provider)}
-                  active={city === item}
+                  <option value="smartest-deal">Smartest Deal</option>
+                  <option value="buy-confidence">Buy Confidence</option>
+                  <option value="lowest-total">Lowest Total</option>
+                  <option value="best-seat-value">Best Seat Value</option>
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">Category</span>
+                <select
+                  name="type"
+                  defaultValue={type}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
                 >
-                  {item}
-                </FilterChip>
-              ))}
-              {providers.slice(0, 4).map((item) => (
-                <FilterChip
-                  key={item}
-                  href={makeSearchHref(query, sort, type, city, item)}
-                  active={provider === item}
+                  {categories.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">City</span>
+                <select
+                  name="city"
+                  defaultValue={city}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
                 >
+                  {cities.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">Provider</span>
+                <select
+                  name="provider"
+                  defaultValue={provider}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none"
+                >
+                  {providers.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-teal-900 px-5 py-3 text-sm font-semibold text-white transition hover:shadow-lg"
+              >
+                Apply filters
+              </button>
+              <a
+                href={makeSearchHref(query, "smartest-deal", "All", "All Cities", "All Providers")}
+                className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+              >
+                Reset
+              </a>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+              {[
+                `Sort: ${sort}`,
+                `Category: ${type}`,
+                `City: ${city}`,
+                `Provider: ${provider}`
+              ].map((item) => (
+                <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5">
                   {item}
-                </FilterChip>
+                </span>
               ))}
             </div>
-          </div>
+          </form>
         </div>
       </div>
 
