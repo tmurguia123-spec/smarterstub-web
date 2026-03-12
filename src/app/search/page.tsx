@@ -171,16 +171,12 @@ export default async function SearchPage({
         </div>
 
         <div className="mt-8 grid gap-4">
-          <section className="rounded-[28px] bg-slate-50 p-5">
+          <section className="rounded-[28px] bg-slate-50 p-4 sm:p-5">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
-              Safe Filter Mode
+              Filters
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Filters now use direct links instead of native dropdowns to avoid the remaining
-              production crash tied to dropdown interaction on this page.
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="grid gap-2 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Sort</span>
                 <div className="flex flex-wrap gap-2">

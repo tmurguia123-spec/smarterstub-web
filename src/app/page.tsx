@@ -13,6 +13,7 @@ import {
   Wallet
 } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EmailCaptureForm } from "@/components/email-capture-form";
 import { ProviderPills } from "@/components/provider-pill";
 import { ScoringExplainer } from "@/components/scoring-explainer";
 import { ScorePill } from "@/components/score-pill";
@@ -211,6 +212,16 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">
+        <EmailCaptureForm
+          title="Track better ticket deals with SmarterStub"
+          description="Get deal alerts when prices improve for the artists, teams, and venues you care about. Not ready to buy? We'll watch for better options."
+          buttonLabel="Get deal alerts"
+          successMessage="You're on the list. We'll keep watch for better deals."
+          source="homepage"
+        />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ScoringExplainer } from "@/components/scoring-explainer";
 import { DevSourceIndicator } from "@/components/dev-source-indicator";
+import { EmailCaptureForm } from "@/components/email-capture-form";
 import { ScorePill } from "@/components/score-pill";
 import {
   getEventComparison,
@@ -126,6 +127,9 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               Exact seats and availability are confirmed on Ticketmaster.
             </p>
           ) : null}
+          <p className="mt-2 text-[11px] leading-5 text-slate-500 sm:text-xs">
+            Not ready to buy? Track this event and get notified when better deals appear.
+          </p>
         </div>
       </div>
 
@@ -385,13 +389,24 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               <Wallet className="h-4 w-4" />
               Transparency
             </div>
-            <div className="mt-4 rounded-[24px] bg-white p-5 shadow-sm">
-              <div className="text-lg font-semibold text-slate-950">Estimated total cost is central</div>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                SmarterStub ranks listings on all-in price, fee drag, seat quality, and trust rather than base price alone.
-              </p>
-            </div>
+              <div className="mt-4 rounded-[24px] bg-white p-5 shadow-sm">
+                <div className="text-lg font-semibold text-slate-950">Estimated total cost is central</div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  SmarterStub ranks listings on all-in price, fee drag, seat quality, and trust rather than base price alone.
+                </p>
+              </div>
           </div>
+
+          <EmailCaptureForm
+            title="Track this event"
+            description="Track this event and get notified when better deals appear or prices improve. No spam. Just smarter ticket updates."
+            buttonLabel="Notify me about better prices"
+            successMessage="You're on the list for better-price alerts."
+            source="event-page"
+            eventId={event.id}
+            eventTitle={event.title}
+            compact
+          />
         </aside>
       </div>
 
