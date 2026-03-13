@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { AlertSignupRecord, TrackedEventRecord } from "@/lib/alert-store";
+import type {
+  AlertSignupRecord,
+  AlertSubscriberRecord,
+  TrackedEventRecord
+} from "@/lib/alert-store";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -88,4 +92,51 @@ export async function readTrackedEventsFromSupabase(limit = 1000) {
   }
 
   return Array.from(trackedEvents.values());
+}
+
+export async function readAlertSubscribersFromSupabase(eventId: string, limit = 1000) {
+  const insertUrl = getSupabaseInsertUrl();
+
+  if (!insertUrl || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase alert storage is not configured");
+  }
+
+  const url = new URL(insertUrl);
+  url.searchParams.set("select", "email,event_id,event_title");
+  url.searchParams.set("event_id", `eq.${eventId}`);
+  url.searchParams.set("order", "submitted_at.desc");
+  url.searchParams.set("limit", String(limit));
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Supabase subscriber read failed with status ${response.status}: ${errorText}`);
+  }
+
+  const rows = (await response.json()) as Array<{
+    email: string;
+    event_id: string | null;
+    event_title: string | null;
+  }>;
+  const subscribers = new Map<string, AlertSubscriberRecord>();
+
+  for (const row of rows) {
+    if (!row.event_id) {
+      continue;
+    }
+
+    subscribers.set(row.email, {
+      email: row.email,
+      eventId: row.event_id,
+      eventTitle: row.event_title ?? undefined
+    });
+  }
+
+  return Array.from(subscribers.values());
 }

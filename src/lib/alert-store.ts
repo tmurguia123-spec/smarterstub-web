@@ -16,6 +16,12 @@ export interface TrackedEventRecord {
   eventTitle?: string;
 }
 
+export interface AlertSubscriberRecord {
+  email: string;
+  eventId: string;
+  eventTitle?: string;
+}
+
 const DEFAULT_ALERTS_STORAGE_PATH = path.join(process.cwd(), "data", "alert-signups.ndjson");
 
 function getAlertsStoragePath() {
@@ -56,4 +62,31 @@ export async function readTrackedEvents() {
   }
 
   return Array.from(trackedEvents.values());
+}
+
+export async function readAlertSubscribers(eventId: string) {
+  const storagePath = getAlertsStoragePath();
+  const fileContents = await readFile(storagePath, "utf8").catch(() => "");
+
+  if (!fileContents) {
+    return [];
+  }
+
+  const subscribers = new Map<string, AlertSubscriberRecord>();
+
+  for (const line of fileContents.split("\n").filter(Boolean)) {
+    const record = JSON.parse(line) as AlertSignupRecord;
+
+    if (record.eventId !== eventId) {
+      continue;
+    }
+
+    subscribers.set(record.email, {
+      email: record.email,
+      eventId: record.eventId,
+      eventTitle: record.eventTitle
+    });
+  }
+
+  return Array.from(subscribers.values());
 }
