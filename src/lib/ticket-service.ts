@@ -1,104 +1,119 @@
 import "server-only";
 
-import { Event } from "@/types";
-import {
-  fallbackEvents,
-  getFallbackEventById,
-  searchFallbackEvents
-} from "@/lib/fallback-data";
-import { seatGeekConnector } from "@/lib/providers/seatgeek";
-import { stubHubConnector } from "@/lib/providers/stubhub";
-import { ticketmasterConnector } from "@/lib/providers/ticketmaster";
+import { LiveEvent } from "@/types";
 
-const connectors = [ticketmasterConnector, seatGeekConnector, stubHubConnector];
+const DEFAULT_CITY = process.env.DEFAULT_EVENT_CITY ?? "Kansas City";
+const DEFAULT_STATE = process.env.DEFAULT_EVENT_STATE ?? "MO";
 
-export interface SearchResponse {
-  events: Event[];
-  providerStatus: Array<{ provider: string; status: "ok" | "fallback" | "error"; detail?: string }>;
-  usedFallback: boolean;
+function getBackendBaseUrl() {
+  return process.env.BACKEND_API_URL?.replace(/\/$/, "") ?? "";
 }
 
-function dedupeEvents(events: Event[]) {
-  const seen = new Map<string, Event>();
+function buildSlug(title: string, eventId: string) {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 
-  for (const event of events) {
-    const key = `${event.title.toLowerCase()}|${event.date}|${event.city.toLowerCase()}`;
-    const existing = seen.get(key);
-    const isFallback = event.id.startsWith("fallback-");
-
-    if (!existing) {
-      seen.set(key, event);
-      continue;
-    }
-
-    const existingIsFallback = existing.id.startsWith("fallback-");
-
-    if (existingIsFallback && !isFallback) {
-      seen.set(key, event);
-    }
-  }
-
-  return Array.from(seen.values());
+  return base || `event-${eventId}`;
 }
 
-export async function searchUnifiedEvents(query: string): Promise<SearchResponse> {
-  const settled = await Promise.allSettled(connectors.map((connector) => connector.searchEvents({ query })));
-  const providerStatus = settled.map((result, index) => {
-    if (result.status === "fulfilled") {
-      return {
-        provider: connectors[index].providerId,
-        status: result.value.length ? ("ok" as const) : ("fallback" as const)
-      };
-    }
-
-    return {
-      provider: connectors[index].providerId,
-      status: "error" as const,
-      detail: result.reason instanceof Error ? result.reason.message : "Unknown provider error"
-    };
-  });
-
-  const liveEvents = settled.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
-  const fallbackMatches = searchFallbackEvents(query);
-
-  if (liveEvents.length === 0) {
-    return {
-      events: fallbackMatches,
-      providerStatus,
-      usedFallback: true
-    };
-  }
+function normalizeEvent(source: "seatgeek" | "ticketmaster", raw: Record<string, unknown>): LiveEvent {
+  const title = typeof raw.event_name === "string" ? raw.event_name : "Live event";
+  const eventId = typeof raw.event_id === "string" ? raw.event_id : "";
 
   return {
-    events: dedupeEvents([...liveEvents, ...fallbackMatches]),
-    providerStatus,
-    usedFallback: false
+    source,
+    eventId,
+    slug: buildSlug(title, eventId),
+    title,
+    date: typeof raw.event_date === "string" ? raw.event_date : null,
+    time: typeof raw.event_time === "string" ? raw.event_time : null,
+    status: typeof raw.status === "string" ? raw.status : null,
+    performers: typeof raw.performers === "string" ? raw.performers : null,
+    genre: typeof raw.genre === "string" ? raw.genre : null,
+    venueName: typeof raw.venue_name === "string" ? raw.venue_name : null,
+    city: typeof raw.city === "string" ? raw.city : null,
+    state: typeof raw.state === "string" ? raw.state : null,
+    priceMin: typeof raw.price_min === "number" ? raw.price_min : null,
+    priceMax: typeof raw.price_max === "number" ? raw.price_max : null,
+    currency: typeof raw.currency === "string" ? raw.currency : null,
+    url: typeof raw.url === "string" ? raw.url : null
   };
 }
 
-export async function getUnifiedEventById(id: string) {
-  if (id.startsWith("fallback-")) {
-    return getFallbackEventById(id);
+async function fetchBackendJson(path: string) {
+  const baseUrl = getBackendBaseUrl();
+
+  if (!baseUrl) {
+    return null;
   }
 
-  const connector = connectors.find((item) => id.startsWith(`${item.providerId}-`));
+  const response = await fetch(`${baseUrl}${path}`, {
+    next: {
+      revalidate: 300
+    }
+  }).catch(() => null);
 
-  if (!connector) {
-    return getFallbackEventById(id);
+  if (!response || !response.ok) {
+    return null;
   }
 
-  try {
-    const event = await connector.getEventById(id);
-    return event ?? getFallbackEventById(id);
-  } catch {
-    return getFallbackEventById(id);
-  }
+  return response.json();
 }
 
-export async function getFeaturedEvents() {
-  return fallbackEvents.filter((event) => event.featured).slice(0, 4);
+export function buildEventRoute(event: LiveEvent) {
+  return `/event/${event.source}-${event.eventId}`;
 }
 
-export async function getTrendingEvents() {
-  return fallbackEvents.filter((event) => event.trending).slice(0, 3);
+export function parseEventKey(value: string) {
+  const match = value.match(/^(seatgeek|ticketmaster)-(.+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    source: match[1] as "seatgeek" | "ticketmaster",
+    eventId: match[2]
+  };
+}
+
+export async function searchLiveEvents(options?: {
+  query?: string;
+  city?: string;
+  state?: string;
+}) {
+  const params = new URLSearchParams();
+  params.set("city", options?.city?.trim() || DEFAULT_CITY);
+  params.set("state", options?.state?.trim() || DEFAULT_STATE);
+
+  if (options?.query?.trim()) {
+    params.set("keyword", options.query.trim());
+  }
+
+  const payload = await fetchBackendJson(`/events/seatgeek?${params.toString()}`);
+
+  if (!payload || !Array.isArray(payload.events)) {
+    return [] as LiveEvent[];
+  }
+
+  return payload.events.map((event: Record<string, unknown>) => normalizeEvent("seatgeek", event));
+}
+
+export async function getLiveEventByKey(value: string) {
+  const parsed = parseEventKey(value);
+
+  if (!parsed || parsed.source !== "seatgeek") {
+    return null;
+  }
+
+  const payload = await fetchBackendJson(`/events/seatgeek/${parsed.eventId}`);
+
+  if (!payload || typeof payload !== "object" || !payload.event) {
+    return null;
+  }
+
+  return normalizeEvent("seatgeek", payload.event as Record<string, unknown>);
 }

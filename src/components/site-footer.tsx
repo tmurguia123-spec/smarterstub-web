@@ -26,9 +26,9 @@ export function SiteFooter() {
         </div>
         <div className="space-y-3 text-sm text-slate-600">
           <div className="font-semibold text-slate-950">Trust</div>
-          <div>Transparent fee math</div>
-          <div>Provider comparison</div>
-          <div>Mock MVP for investor demo</div>
+          <div>Live backend event inventory</div>
+          <div>Alert signup capture</div>
+          <div>SEO-first frontend architecture</div>
         </div>
       </div>
     </footer>

@@ -3,7 +3,6 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { trendingSearches } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
@@ -16,6 +15,7 @@ const STORAGE_KEY = "smarterstub-recent-searches";
 const MAX_RECENT_SEARCHES = 4;
 const MAX_STORED_SEARCH_LENGTH = 60;
 const MAX_STORAGE_BYTES = 512;
+const HONEST_SUGGESTIONS = ["Concert tickets", "Sports tickets", "Comedy shows", "Theater events"];
 
 function normalizeSearchValue(value: string) {
   return value.replace(/\s+/g, " ").trim().slice(0, MAX_STORED_SEARCH_LENGTH);
@@ -189,8 +189,8 @@ export function SearchBar({
 
       {showExplore ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <span className="font-medium text-slate-600">Trending:</span>
-          {trendingSearches.slice(0, compact ? 4 : 5).map((item) => (
+          <span className="font-medium text-slate-600">Try:</span>
+          {HONEST_SUGGESTIONS.slice(0, compact ? 3 : 4).map((item) => (
             <button
               key={item}
               type="button"

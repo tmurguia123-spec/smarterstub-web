@@ -3,11 +3,30 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { getSiteUrl } from "@/lib/site-url";
+
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "SmarterStub | Search Once, Compare Everywhere",
+  metadataBase: new URL(siteUrl),
+  title: "SmarterStub | Live event search with an SEO-first frontend",
   description:
-    "SmarterStub helps fans compare ticket prices across top marketplaces and spot the best all-in deal fast."
+    "SmarterStub is migrating to a crawlable Next.js frontend for live event search, event pages, and alert signup.",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "SmarterStub",
+    description:
+      "Live event search, event details, and alert signup on an SEO-friendly frontend.",
+    url: siteUrl,
+    siteName: "SmarterStub",
+    type: "website"
+  },
+  robots: {
+    index: true,
+    follow: true
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

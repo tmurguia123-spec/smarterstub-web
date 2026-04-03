@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getUnifiedEventById } from "@/lib/ticket-service";
+import { getLiveEventByKey } from "@/lib/ticket-service";
 import {
   persistPriceSnapshot,
   readPriceSnapshots,
@@ -12,24 +12,33 @@ import {
   readPriceSnapshotsFromSupabase
 } from "@/lib/supabase-price-snapshot-store";
 
-export function getBestKnownPriceSnapshotPayload(event: Awaited<ReturnType<typeof getUnifiedEventById>>) {
-  if (!event || event.listings.length === 0) {
+export function getBestKnownPriceSnapshotPayload(event: Awaited<ReturnType<typeof getLiveEventByKey>>) {
+  if (!event) {
     return null;
   }
 
-  const lowestTotalListing = [...event.listings].sort((a, b) => a.totalPrice - b.totalPrice)[0];
+  const bestKnownPrice =
+    typeof event.priceMin === "number"
+      ? event.priceMin
+      : typeof event.priceMax === "number"
+        ? event.priceMax
+        : null;
+
+  if (bestKnownPrice === null) {
+    return null;
+  }
 
   return {
-    eventId: event.id,
+    eventId: `${event.source}-${event.eventId}`,
     eventTitle: event.title,
-    provider: lowestTotalListing.provider,
-    bestKnownPrice: lowestTotalListing.totalPrice,
+    provider: event.source,
+    bestKnownPrice,
     capturedAt: new Date().toISOString()
   } satisfies PriceSnapshotRecord;
 }
 
 export async function capturePriceSnapshotForEvent(eventId: string) {
-  const event = await getUnifiedEventById(eventId);
+  const event = await getLiveEventByKey(eventId);
   const payload = getBestKnownPriceSnapshotPayload(event);
 
   if (!payload) {

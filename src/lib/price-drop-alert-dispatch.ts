@@ -1,6 +1,7 @@
 import "server-only";
 
 import { formatCurrency } from "@/lib/utils";
+import { getSiteUrl } from "@/lib/site-url";
 import { readAlertSubscribers } from "@/lib/alert-store";
 import {
   isSupabaseAlertStoreConfigured,
@@ -24,7 +25,7 @@ import {
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
-const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
+const APP_BASE_URL = process.env.APP_BASE_URL ?? getSiteUrl();
 
 function isResendConfigured() {
   return Boolean(RESEND_API_KEY && RESEND_FROM_EMAIL);
