@@ -64,11 +64,12 @@ async function fetchBackendJson(path: string) {
 }
 
 export function buildEventRoute(event: LiveEvent) {
-  return `/event/${event.source}-${event.eventId}`;
+  return `/event/${event.source}-${encodeURIComponent(event.eventId)}`;
 }
 
 export function parseEventKey(value: string) {
-  const match = value.match(/^(seatgeek|ticketmaster)-(.+)$/);
+  const decodedValue = decodeURIComponent(value);
+  const match = decodedValue.match(/^(seatgeek|ticketmaster)-(.+)$/);
 
   if (!match) {
     return null;
@@ -109,7 +110,7 @@ export async function getLiveEventByKey(value: string) {
     return null;
   }
 
-  const payload = await fetchBackendJson(`/events/seatgeek/${parsed.eventId}`);
+  const payload = await fetchBackendJson(`/events/seatgeek/${encodeURIComponent(parsed.eventId)}`);
 
   if (!payload || typeof payload !== "object" || !payload.event) {
     return null;
