@@ -19,6 +19,30 @@ function buildSlug(title: string, eventId: string) {
   return base || `event-${eventId}`;
 }
 
+function buildEventKey(source: "seatgeek" | "ticketmaster", eventId: string) {
+  return `${source}-${eventId}`;
+}
+
+function safelyDecodeRouteParam(value: string) {
+  let currentValue = value;
+
+  for (let index = 0; index < 2; index += 1) {
+    try {
+      const decodedValue = decodeURIComponent(currentValue);
+
+      if (decodedValue === currentValue) {
+        return currentValue;
+      }
+
+      currentValue = decodedValue;
+    } catch {
+      return currentValue;
+    }
+  }
+
+  return currentValue;
+}
+
 function normalizeEvent(source: "seatgeek" | "ticketmaster", raw: Record<string, unknown>): LiveEvent {
   const title = typeof raw.event_name === "string" ? raw.event_name : "Live event";
   const eventId = typeof raw.event_id === "string" ? raw.event_id : "";
@@ -64,11 +88,11 @@ async function fetchBackendJson(path: string) {
 }
 
 export function buildEventRoute(event: LiveEvent) {
-  return `/event/${event.source}-${encodeURIComponent(event.eventId)}`;
+  return `/event/${encodeURIComponent(buildEventKey(event.source, event.eventId))}`;
 }
 
 export function parseEventKey(value: string) {
-  const decodedValue = decodeURIComponent(value);
+  const decodedValue = safelyDecodeRouteParam(value);
   const match = decodedValue.match(/^(seatgeek|ticketmaster)-(.+)$/);
 
   if (!match) {
